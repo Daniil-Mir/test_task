@@ -29,7 +29,13 @@ function createProfessionForm(event) {
   const input = form.querySelectorAll('#param-text');
 
   fields.innerText = professions.innerText;
-  Parametr.getFromProfessionsDB(fields.innerText);
+  Parametr.getFromProfessionsDB(fields.innerText)
+    .then(() => {
+      const table = document.getElementById('list');
+      const deleteBtns = table.querySelectorAll('#delete');
+     
+      deleteBtns.forEach(button => button.addEventListener('click', deleteProfession));
+    });
   input.forEach(elem => elem.addEventListener('input', () => {isSubmitBtnDisabled(input)}));
 };
 
@@ -84,6 +90,7 @@ function submitFormHandler(event) {
         });
         submitBtn.disabled = false;
       })
+        .then(deleteProfession);
     } else if (fields.innerText === 'Отделы') {
       Parametr.createDepartment(parametr, fields.innerText).then(() => {
         input.forEach(oneInput => {
@@ -100,4 +107,10 @@ function submitFormHandler(event) {
     // });
 
   }
+}
+
+function deleteProfession(event) {
+  let numberLikeText = event.target.parentNode.children[0].innerText;
+  let elemOfArray = Number(numberLikeText) - 1;
+  Parametr.deleteProfession(elemOfArray, "Профессии");
 }
