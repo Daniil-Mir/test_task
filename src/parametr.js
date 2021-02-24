@@ -34,7 +34,28 @@ export class Parametr {
         console.log('Pered otpravkoy', response);
         return response.categorie;
       })
-      .then(Parametr.renderList)
+      .then(Parametr.renderListAfterGet)
+  }
+
+  static deleteProfession(elemOfArray, categorie) {
+    const all = getParametrsFromLocalStorage(categorie);
+
+    // all.sort((prev, next) => {
+    //   if (prev.Наименование < next.Наименование) return -1;
+    //   if (prev.Наименование > next.Наименование) return 1;
+    //   return 0;
+    // });
+
+    console.log(elemOfArray, all[elemOfArray].id);
+
+    fetch(`https://my-first-app-5a872-default-rtdb.firebaseio.com/professions/${all[elemOfArray].id}.json`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+      .then(response => response.json())
+      .then(response => {console.log(response)})
   }
 
   static createDepartment(department, categorie) {
@@ -54,11 +75,11 @@ export class Parametr {
         addToLocalStorage(response);
         return response.categorie;
       })
-      .then(Parametr.renderList)
+      .then(Parametr.renderListAfterGet)
   }
 
   static getFromProfessionsDB(categorie) {
-    fetch('https://my-first-app-5a872-default-rtdb.firebaseio.com/professions.json', {
+    return fetch('https://my-first-app-5a872-default-rtdb.firebaseio.com/professions.json', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
@@ -67,16 +88,18 @@ export class Parametr {
       .then(response => response.json())
       .then(response => {
         const all = getParametrsFromLocalStorage(categorie);
-        for (let prop in response) {
-          all.push(response[prop]);
-          all[all.length - 1].id = prop;
-        }
-        all.sort((prev, next) => {
-          if (prev.Наименование < next.Наименование) return -1;
-          if (prev.Наименование > next.Наименование) return 1;
-          return 0;
-        });
-        localStorage.setItem(`${categorie}`, JSON.stringify(all));
+        if (all.length === 0) {
+          for (let prop in response) {
+            all.push(response[prop]);
+            all[all.length - 1].id = prop;
+          }
+          all.sort((prev, next) => {
+            if (prev.Наименование < next.Наименование) return -1;
+            if (prev.Наименование > next.Наименование) return 1;
+            return 0;
+          });
+          localStorage.setItem(`${categorie}`, JSON.stringify(all));
+        };
         return  categorie;
       })
       .then(Parametr.renderListAfterGet)
@@ -87,7 +110,7 @@ export class Parametr {
   }
 
   static renderList(categorie) {
-    const parametrs = getParametrsFromLocalStorage(categorie)
+    const parametrs = getParametrsFromLocalStorage(categorie);
     const html = parametrs.length
       ? parametrs.map(toCard).join('')
       : `<div class="mui--text-headline">Параметров нет</div>`;
@@ -97,18 +120,26 @@ export class Parametr {
   }
 
   static renderListAfterGet(categorie) {
-    const parametrs = getParametrsFromLocalStorage(categorie)
-    const html = parametrs.length
-      ? parametrs.map(tableOfProfessions).join('')
-      : `<div class="mui--text-headline">Параметров нет</div>`;
+    const parametrs = getParametrsFromLocalStorage(categorie);
+    parametrs.sort((prev, next) => {
+      if (prev.Наименование < next.Наименование) return -1;
+      if (prev.Наименование > next.Наименование) return 1;
+      return 0;
+    });
+    localStorage.setItem(categorie, JSON.stringify(parametrs));
+    const html = parametrs.map(tableOfProfessions).join('');
+   //   : `<div class="mui--text-headline">Параметров нет</div>`;
 
     const list = document.getElementById('list');
     list.innerHTML = html;
-    list.insertAdjacentHTML('afterbegin', `<tr>
-    <th>Наименование</th>
-    <th>Примечание</th>
-    <th>Дата</th>
-  </tr>`);
+    list.insertAdjacentHTML('afterbegin', 
+    `<tr>
+      <th>#</th>
+      <th>Наименование</th>
+      <th>Примечание</th>
+      <th>Дата создания</th>
+      <th>Удалить</th>
+    </tr>`);
   }
 }
 
@@ -132,8 +163,14 @@ function toCard(parametr) {
   <br>`;
 }
 
-function tableOfProfessions(parametr) {
+function tableOfProfessions(parametr, index) {
   return `
-    <tr><td>${parametr.Наименование}</td><td>${parametr.Примечания}</td><td>${new Date(parametr.date).toLocaleDateString()} ${new Date(parametr.date).toLocaleTimeString()}</td><td id="delete">X</td></tr>
+    <tr>
+      <td>${index + 1}</td>
+      <td>${parametr.Наименование}</td>
+      <td>${parametr.Примечания}</td>
+      <td>${new Date(parametr.date).toLocaleDateString()} ${new Date(parametr.date).toLocaleTimeString()}</td>
+      <td id="delete">X</td>
+    </tr>
   `;
 }
